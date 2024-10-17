@@ -10,11 +10,12 @@ from langchain import hub
 from streamlit_chat import message
 import os 
 from langchain.vectorstores import FAISS
-
+from dotenv import load_dotenv
 # Set environment variables
+load_dotenv()
+
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['USER_AGENT'] = 'myagent'
-
 # Initialize the model and necessary components
 model = ChatOpenAI(model="gpt-4o-mini")
 loader = PyPDFLoader("Kalambot_Info.pdf")
