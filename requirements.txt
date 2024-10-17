@@ -180,4 +180,3 @@ wrapt==1.16.0
 wsproto==1.2.0
 yarl==1.15.4
 zipp==3.20.2
-pysqlite3-binary
