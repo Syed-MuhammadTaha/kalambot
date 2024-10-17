@@ -1,7 +1,6 @@
 import streamlit as st
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain_chroma import Chroma
 from langchain.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
@@ -9,12 +8,14 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAIEmbeddings
 from langchain import hub
 from streamlit_chat import message
-import os
+import os 
+from langchain.vectorstores import FAISS
 
 # Set environment variables
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['USER_AGENT'] = 'myagent'
 
+# Initialize the model and necessary components
 model = ChatOpenAI(model="gpt-4o-mini")
 loader = PyPDFLoader("Kalambot_Info.pdf")
 documents = loader.load()
@@ -23,9 +24,11 @@ documents = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=200, add_start_index=True)
 all_splits = text_splitter.split_documents(documents)
 
-# Set up vector store
-vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
+vectorstore = FAISS.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
+
+# Perform similarity search (retriever based on FAISS)
 retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 2})
+
 
 # Load the RAG prompt template
 template = """Use the following pieces of context to answer the question at the end.
