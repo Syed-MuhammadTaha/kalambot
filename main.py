@@ -14,11 +14,7 @@ import os
 # Set environment variables
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['USER_AGENT'] = 'myagent'
-__import__('pysqlite3')
-import sys
 
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-# Initialize the model and necessary components
 model = ChatOpenAI(model="gpt-4o-mini")
 loader = PyPDFLoader("Kalambot_Info.pdf")
 documents = loader.load()
