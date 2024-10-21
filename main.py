@@ -78,20 +78,13 @@ if "previous_chain_type" not in st.session_state:
 
 # Streamlit UI
 st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
-styl = f"""
-<style>
-    # .stAppToolbar {{
-    #     visibility: hidden;
-    # }}
-    ._profilePreview_1yi6l_63{{
-        visibility: hidden;
-    }}
-    ._container_1yi6l_1 _viewerBadge_nim44_23{{
-        visibility: hidden;
-    }}
-</style>
-"""
-st.markdown(styl, unsafe_allow_html=True)
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 # with st.container():
 #     col1, col2= st.columns([0.9, 0.1])
