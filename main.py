@@ -11,6 +11,8 @@ from streamlit_chat import message
 import os 
 from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
+
+
 # Set environment variables
 load_dotenv()
 
@@ -76,12 +78,32 @@ if "previous_chain_type" not in st.session_state:
 
 # Streamlit UI
 st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
-st.title("Chatbot")
+styl = f"""
+<style>
+    .stTextInput {{
+      position: fixed;
+      bottom: 3rem;
+    }}
+    .stButton {{
+        position: fixed;
+        bottom: 3rem;
+    }}
+</style>
+"""
+st.markdown(styl, unsafe_allow_html=True)
+col1, col2= st.columns([9, 1])
 
-# User input
-user_input = st.text_input("You:", key="input")
+with col1:
+    user_input = st.text_input("You:", key="input", on_change=lambda: st.session_state.update({"enter_pressed": True}))
+with col2:
+    st.button("Send")
 
-if st.button("Send") and user_input:
+# Initialize session state for 'enter_pressed'
+if "enter_pressed" not in st.session_state:
+    st.session_state.enter_pressed = False
+
+# Check if Send button or Enter was pressed
+if (st.session_state.enter_pressed) and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     
     # Define the logic to use the correct chain based on previous context
@@ -104,15 +126,15 @@ if st.button("Send") and user_input:
         # Handle first input
         output = rag_chain.invoke(user_input)
         st.session_state.previous_chain_type = "rag"
-
     st.session_state.previous_answer = output
-
     # Add bot's response to the session state
     st.session_state.messages.append({"role": "bot", "content": output})
-
+    
 # Display chat history
-for idx, msg in enumerate(st.session_state.messages):
-    if msg["role"] == "user":
-        message(msg["content"], is_user=True, key=f"user_{idx}")
-    else:
-        message(msg["content"], is_user=False, key=f"bot_{idx}")
+with st.container(height=550):
+    for idx, msg in enumerate(st.session_state.messages):
+        if msg["role"] == "user":
+            message(msg["content"], is_user=True, key=f"user_{idx}")
+        else:
+            message(msg["content"], is_user=False, key=f"bot_{idx}")
+
