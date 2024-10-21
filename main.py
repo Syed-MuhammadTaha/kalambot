@@ -80,23 +80,27 @@ if "previous_chain_type" not in st.session_state:
 st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
 styl = f"""
 <style>
-    .stTextInput {{
-      position: fixed;
-      bottom: 3rem;
+    # .stAppToolbar {{
+    #     visibility: hidden;
+    # }}
+    ._profilePreview_1yi6l_63{{
+        visibility: hidden;
     }}
-    .stButton {{
-        position: fixed;
-        bottom: 3rem;
+    ._container_1yi6l_1 _viewerBadge_nim44_23{{
+        visibility: hidden;
     }}
 </style>
 """
 st.markdown(styl, unsafe_allow_html=True)
-col1, col2= st.columns([9, 1])
 
-with col1:
-    user_input = st.text_input("You:", key="input", on_change=lambda: st.session_state.update({"enter_pressed": True}))
-with col2:
-    st.button("Send")
+# with st.container():
+#     col1, col2= st.columns([0.9, 0.1])
+
+#     with col1:
+#         user_input = st.text_input("You:", key="input", on_change=lambda: st.session_state.update({"enter_pressed": True}))
+#     with col2:
+#         st.button("Send")
+user_input = st.chat_input("You:", key="input", on_submit=lambda: st.session_state.update({"enter_pressed": True}))
 
 # Initialize session state for 'enter_pressed'
 if "enter_pressed" not in st.session_state:
@@ -130,11 +134,12 @@ if (st.session_state.enter_pressed) and user_input:
     # Add bot's response to the session state
     st.session_state.messages.append({"role": "bot", "content": output})
     
-# Display chat history
-with st.container(height=550):
+with st.container():
     for idx, msg in enumerate(st.session_state.messages):
         if msg["role"] == "user":
-            message(msg["content"], is_user=True, key=f"user_{idx}")
+            with st.chat_message("user"):
+                st.write(msg["content"])
         else:
-            message(msg["content"], is_user=False, key=f"bot_{idx}")
+            with st.chat_message("ai"):
+                st.write(msg["content"])
 
