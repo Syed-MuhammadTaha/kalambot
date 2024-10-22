@@ -13,6 +13,23 @@ from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
 
 
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer:after{
+                content: 'Made with ❤️ by Kalambot';
+                visibility: visible;
+                display: block;
+                position: relative;
+                color: #808080;
+                text-align: center;
+                font-size: 12px;
+                padding: 5px;
+            }
+            #Github {visibility: hidden;}
+            </style>
+            """
+
 # Set environment variables
 load_dotenv()
 
@@ -77,24 +94,9 @@ if "previous_chain_type" not in st.session_state:
     st.session_state.previous_chain_type = None
 
 # Streamlit UI
-st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer:after{
-                content: 'Made with ❤️ by Kalambot';
-                visibility: visible;
-                display: block;
-                position: relative;
-                color: #808080;
-                text-align: center;
-                font-size: 12px;
-                padding: 5px;
-            }
-            #Github {visibility: hidden;}
-            </style>
-            """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
+
 
 user_input = st.chat_input("You:", key="input", on_submit=lambda: st.session_state.update({"enter_pressed": True}))
 
