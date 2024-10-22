@@ -82,17 +82,12 @@ hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
+            #Github {visibility: hidden;}
+            .stToolbar {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
-# with st.container():
-#     col1, col2= st.columns([0.9, 0.1])
-
-#     with col1:
-#         user_input = st.text_input("You:", key="input", on_change=lambda: st.session_state.update({"enter_pressed": True}))
-#     with col2:
-#         st.button("Send")
 user_input = st.chat_input("You:", key="input", on_submit=lambda: st.session_state.update({"enter_pressed": True}))
 
 # Initialize session state for 'enter_pressed'
@@ -130,7 +125,7 @@ if (st.session_state.enter_pressed) and user_input:
 with st.container():
     for idx, msg in enumerate(st.session_state.messages):
         if msg["role"] == "user":
-            with st.chat_message("user"):
+            with st.chat_message("user", avatar=":material/thumb_up:"):
                 st.write(msg["content"])
         else:
             with st.chat_message("ai"):
