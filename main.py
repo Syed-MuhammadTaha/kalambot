@@ -81,9 +81,17 @@ st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
+            footer:after{
+                content: 'Made with ❤️ by Kalambot';
+                visibility: visible;
+                display: block;
+                position: relative;
+                color: #808080;
+                text-align: center;
+                font-size: 12px;
+                padding: 5px;
+            }
             #Github {visibility: hidden;}
-            .stToolbar {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
