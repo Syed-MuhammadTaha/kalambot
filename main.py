@@ -17,9 +17,7 @@ hide_streamlit_style = """
             <style>
             [data-testid="stAppToolbar"] {visibility: hidden !important;}
             footer {visibility: hidden !important;}
-
             </style>
-
             """
 
 # Set environment variables
@@ -123,13 +121,13 @@ if (st.session_state.enter_pressed) and user_input:
     st.session_state.previous_answer = output
     # Add bot's response to the session state
     st.session_state.messages.append({"role": "bot", "content": output})
-    
+
 with st.container():
     for idx, msg in enumerate(st.session_state.messages):
         if msg["role"] == "user":
-            with st.chat_message("user", avatar=":material/thumb_up:"):
+            with st.chat_message("user"):
                 st.write(msg["content"])
         else:
-            with st.chat_message("ai"):
+            with st.chat_message("ai", avatar="logo.png"):
                 st.write(msg["content"])
 
