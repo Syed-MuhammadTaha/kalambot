@@ -15,18 +15,8 @@ from dotenv import load_dotenv
 
 hide_streamlit_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            footer:after{
-                content: 'Made with ❤️ by Kalambot';
-                visibility: visible;
-                display: block;
-                position: relative;
-                color: #808080;
-                text-align: center;
-                font-size: 12px;
-                padding: 5px;
-            }
-            #Github {visibility: hidden;}
+            [data-testid="stToolbar"] {visibility: hidden !important;}
+            footer {visibility: hidden !important;}
             </style>
             """
 
