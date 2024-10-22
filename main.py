@@ -15,9 +15,11 @@ from dotenv import load_dotenv
 
 hide_streamlit_style = """
             <style>
-            [data-testid="stToolbar"] {visibility: hidden !important;}
+            [data-testid="stAppToolbar"] {visibility: hidden !important;}
             footer {visibility: hidden !important;}
+
             </style>
+
             """
 
 # Set environment variables
