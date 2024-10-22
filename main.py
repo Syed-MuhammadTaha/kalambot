@@ -94,9 +94,9 @@ if "previous_chain_type" not in st.session_state:
     st.session_state.previous_chain_type = None
 
 # Streamlit UI
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
-st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
 
+st.set_page_config(page_title="Chatbot Interface", page_icon="💬")
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 user_input = st.chat_input("You:", key="input", on_submit=lambda: st.session_state.update({"enter_pressed": True}))
 
