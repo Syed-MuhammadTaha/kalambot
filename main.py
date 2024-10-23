@@ -48,7 +48,7 @@ def extract_headers_and_content(doc_path):
 
     return content_dict
 
-headers_content = extract_headers_and_content("/content/Kalambot_Info.docx")
+headers_content = extract_headers_and_content("Kalambot_Info.docx")
 
 # Split documents
 text_splitter = RecursiveCharacterTextSplitter(
