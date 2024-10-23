@@ -139,12 +139,12 @@ if (st.session_state.enter_pressed) and user_input:
             else:
                 output = rag_chain.invoke(combined_input)
         else:
-            if st.session_state.previous_chain_type == "base":
-                output = rag_chain.invoke(user_input)
-                st.session_state.previous_chain_type = "rag"
-            else:
+            if is_finetune:
                 output = base_chain.invoke({"context": "", "question": user_input})
                 st.session_state.previous_chain_type = "base"
+            else:
+                output = rag_chain.invoke(user_input)
+                st.session_state.previous_chain_type = "rag"
     else:
         if is_finetune:
             output = base_chain.invoke({"context": "", "question": user_input})
