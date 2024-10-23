@@ -182,3 +182,4 @@ wsproto==1.2.0
 yarl==1.15.4
 zipp==3.20.2
 docx2txt==0.8
+docx==0.2.4
