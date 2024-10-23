@@ -28,7 +28,7 @@ os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['USER_AGENT'] = 'myagent'
 # Initialize the model and necessary components
 model = ChatOpenAI(model="gpt-4o-mini")
-loader = Docx2txtLoader("/content/Kalambot_Info.docx")
+loader = Docx2txtLoader("Kalambot_Info.docx")
 
 documents = loader.load()
 
