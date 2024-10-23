@@ -17,6 +17,7 @@ hide_streamlit_style = """
             <style>
             [data-testid="stAppToolbar"] {visibility: hidden !important;}
             footer {visibility: hidden !important;}
+            
             </style>
             """
 
@@ -65,10 +66,9 @@ rag_chain = (
 # Base chain
 base_chain = base_prompt | model | StrOutputParser()
 
-# Checking the relation between answers and questions
 check_prompt_template = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are an intelligent assistant tasked with evaluating the relationship between two pieces of text. 1. Analyze the previous answer ('{previous_answer}') for its key concepts, themes, and specific details. 2. Examine the current prompt ('{text}') to identify its main focus and intent. 3. Consider whether both texts discuss the same entity and if the current prompt seeks further elaboration, specific details, or information about the entity's structure or personnel based on the previous context. Respond with one of the following: - 'Match' if the previous answer provides relevant context or details that can be extended to inform or enhance the current prompt. - 'Related' if the previous answer does not directly address the current prompt but still pertains to the same entity in a broader sense. - 'No Match' if the previous answer does not offer applicable ideas, context, or further details about the same entity for the current prompt."),
+        ("system", "You are an intelligent assistant tasked with evaluating whether the current question ('{text}') is a follow-up to the previous answer ('{previous_answer}'). 1. Analyze the previous answer for its entity. 2. Examine the current question to determine if it seeks further information or elaboration about the same entity or concept discussed in the previous answer. 3. Ensure both texts refer to the same entity (such as a company, individual, or event) and that the current question logically follows from the previous answer. Respond with one of the following: - 'Match' if the current question is a clear follow-up and refers to the same entity or concept as the previous answer. - 'Related' if the current question touches on the same entity or concept but is not a direct follow-up. - 'No Match' if the current question is unrelated to the previous answer."),
         ("user", "Follow-up question: {text}. Previous answer: {previous_answer}.")
     ]
 )
@@ -131,3 +131,5 @@ with st.container():
             with st.chat_message("ai", avatar="logo.png"):
                 st.write(msg["content"])
 # test
+
+
