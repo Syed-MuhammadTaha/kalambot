@@ -1,7 +1,7 @@
 import streamlit as st
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -11,7 +11,7 @@ from streamlit_chat import message
 import os 
 from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
-
+from docx import Document
 
 hide_streamlit_style = """
             <style>
@@ -28,12 +28,36 @@ os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 os.environ['USER_AGENT'] = 'myagent'
 # Initialize the model and necessary components
 model = ChatOpenAI(model="gpt-4o-mini")
-loader = PyPDFLoader("Kalambot_Info.pdf")
+loader = Docx2txtLoader("/content/Kalambot_Info.docx")
+
 documents = loader.load()
 
+def extract_headers_and_content(doc_path):
+    document = Document(doc_path)
+    content_dict = {}
+    current_header = None
+
+    for para in document.paragraphs:
+        # Check if the paragraph is a header (you can adjust the conditions)
+        if para.style.name.startswith('Heading'):
+            current_header = para.text.strip()
+            content_dict[current_header] = ''
+        elif current_header:
+            # Append content to the current header's content
+            content_dict[current_header] += para.text.strip() + "\n"
+
+    return content_dict
+
+headers_content = extract_headers_and_content("/content/Kalambot_Info.docx")
+
 # Split documents
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=200, add_start_index=True)
-all_splits = text_splitter.split_documents(documents)
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500, chunk_overlap=200, add_start_index=True
+)
+all_splits = []
+for doc in documents:
+    splits = text_splitter.split_documents([doc])  # Use the Document object directly
+    all_splits.extend(splits)
 
 vectorstore = FAISS.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
 
@@ -51,6 +75,7 @@ Question: {question}
 
 Helpful Answer:"""
 
+prompt = hub.pull("rlm/rag-prompt")
 base_prompt = ChatPromptTemplate.from_template(template)
 
 def format_docs(docs):
@@ -59,7 +84,7 @@ def format_docs(docs):
 # RAG chain
 rag_chain = (
     {"context": retriever | format_docs, "question": lambda x: x}
-    | base_prompt | model
+    | prompt | model
     | StrOutputParser()
 )
 
@@ -74,6 +99,11 @@ check_prompt_template = ChatPromptTemplate.from_messages(
 )
 
 check_prompt_chain = check_prompt_template | model | StrOutputParser()
+
+prompt_template = ChatPromptTemplate.from_messages(
+    [("system", "You are a helpful assistant. Please answer the following question whether the user is talking about fine tuning a dataset in either 'yes' or 'no'"), ("user", "{text}")]
+)
+fine_tune_chain = prompt_template | model | StrOutputParser()
 
 # Initialize session state for messages and context
 if "messages" not in st.session_state:
@@ -97,9 +127,10 @@ if "enter_pressed" not in st.session_state:
 # Check if Send button or Enter was pressed
 if (st.session_state.enter_pressed) and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    
+    is_finetune = fine_tune_chain.invoke(user_input).strip().lower() == "yes"
     # Define the logic to use the correct chain based on previous context
     if st.session_state.previous_answer:
+        
         match_result = check_prompt_chain.invoke({"previous_answer": st.session_state.previous_answer, "text": user_input})
         if match_result == "Match":
             combined_input = f"{st.session_state.previous_answer} {user_input}"
@@ -115,9 +146,12 @@ if (st.session_state.enter_pressed) and user_input:
                 output = base_chain.invoke({"context": "", "question": user_input})
                 st.session_state.previous_chain_type = "base"
     else:
-        # Handle first input
-        output = rag_chain.invoke(user_input)
-        st.session_state.previous_chain_type = "rag"
+        if is_finetune:
+            output = base_chain.invoke({"context": "", "question": user_input})
+            st.session_state.previous_chain_type = "base"
+        else:
+            output = rag_chain.invoke(user_input)
+            st.session_state.previous_chain_type = "rag"
     st.session_state.previous_answer = output
     # Add bot's response to the session state
     st.session_state.messages.append({"role": "bot", "content": output})
