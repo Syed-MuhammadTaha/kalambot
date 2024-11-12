@@ -6,7 +6,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAIEmbeddings
-from langchain import hub
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import LLMChain
 from streamlit_chat import message
 import os 
 from langchain.vectorstores import FAISS
@@ -65,9 +69,32 @@ vectorstore = FAISS.from_documents(documents=all_splits, embedding=OpenAIEmbeddi
 retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
 
-# Load the RAG prompt template
-template = """Use the following pieces of context to answer the question at the end.
-You are a chatbot and answer questions. Keep the sentence concise. Keep the answer concise.
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+rag_template = """
+You are Kalambot, chatbot for the company Kalambot. Answer only questions related to the company, its values, operations, policies, and other relevant information about Kalambot. If the question is unrelated to the company (e.g., questions about fine-tuning, personal advice, or unrelated topics), return an empty string as the response. Use three sentences maximum and keep the answer concise.
+
+Question: {question}
+
+Context: {context}
+
+Response:
+"""
+
+
+
+rag_prompt = ChatPromptTemplate.from_template(rag_template)
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | rag_prompt | model
+    | StrOutputParser()
+)
+
+base_memory = ConversationBufferWindowMemory(input_key="question", memory_key="context", k=2)
+
+generic_template = """Use the following pieces of context to answer the question at the end.
+You are a chatbot and answer questions. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
 
 {context}
 
@@ -75,42 +102,40 @@ Question: {question}
 
 Helpful Answer:"""
 
-prompt = hub.pull("rlm/rag-prompt")
-base_prompt = ChatPromptTemplate.from_template(template)
+generic_prompt = ChatPromptTemplate.from_template(generic_template)
 
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-# RAG chain
-rag_chain = (
-    {"context": retriever | format_docs, "question": lambda x: x}
-    | prompt | model
-    | StrOutputParser()
+base_chain = LLMChain(
+    prompt=generic_prompt,
+    llm=model,
+    memory=base_memory,
+    output_parser=StrOutputParser()
 )
-
-# Base chain
-base_chain = base_prompt | model | StrOutputParser()
 
 check_prompt_template = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are an intelligent assistant tasked with evaluating whether the current question ('{text}') is a follow-up to the previous answer ('{previous_answer}'). 1. Analyze the previous answer for its entity. 2. Examine the current question to determine if it seeks further information or elaboration about the same entity or concept discussed in the previous answer. 3. Ensure both texts refer to the same entity (such as a company, individual, or event) and that the current question logically follows from the previous answer. Respond with one of the following: - 'Match' if the current question is a clear follow-up and refers to the same entity or concept as the previous answer. - 'Related' if the current question touches on the same entity or concept but is not a direct follow-up. - 'No Match' if the current question is unrelated to the previous answer."),
+        ("system",
+         "You are KalamBot, an intelligent assistant tasked with determining if the user's current question is a follow-up to the same subject of previous response. Follow these steps to decide:\n\n"
+         "1. **Identify the Main Subject**: First, identify the main subject or entity in the previous response ('{previous_answer}'). For example, if the previous response is 'happy to help you,' the subject is likely the chatbot itself.\n\n"
+         "2. **Analyze the Current Question**: Check if the current question ('{text}') addresses the same subject. Look for indications that the question refers back to the same entity, such as references to 'you,' 'the company,' or other specific terms linked to the identified subject.\n\n"
+         "3. **Determine Match or No Match**: If the current question logically follows from the previous response and both refer to the same subject or entity, categorize as 'match.' Otherwise, categorize as 'No Match'.\n\n"
+         "Respond with one of the following:\n"
+         "- 'match' if the question clearly follows from and refers to the same entity or concept as the previous response.\n"
+         "- 'No Match' if the question is unrelated to the previous response."
+        ),
         ("user", "Follow-up question: {text}. Previous answer: {previous_answer}.")
     ]
 )
 
-check_prompt_chain = check_prompt_template | model | StrOutputParser()
 
-prompt_template = ChatPromptTemplate.from_messages(
-    [("system", "You are a helpful assistant. Please answer the following question whether the user is talking about fine tuning a dataset in either 'yes' or 'no'"), ("user", "{text}")]
-)
-fine_tune_chain = prompt_template | model | StrOutputParser()
+
+check_prompt_chain = check_prompt_template | model | StrOutputParser()
 
 # Initialize session state for messages and context
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "previous_answer" not in st.session_state:
     st.session_state.previous_answer = ""
-if "previous_chain_type" not in st.session_state:
+if "chain_type" not in st.session_state:
     st.session_state.previous_chain_type = None
 
 # Streamlit UI
@@ -127,34 +152,35 @@ if "enter_pressed" not in st.session_state:
 # Check if Send button or Enter was pressed
 if (st.session_state.enter_pressed) and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    is_finetune = fine_tune_chain.invoke(user_input).strip().lower() == "yes"
+
+    combined_input = f"{st.session_state.previous_answer} {user_input}"
+    is_match = check_prompt_chain.invoke({"previous_answer": st.session_state.previous_answer, "text": user_input})
     # Define the logic to use the correct chain based on previous context
-    if st.session_state.previous_answer:
-        
-        match_result = check_prompt_chain.invoke({"previous_answer": st.session_state.previous_answer, "text": user_input})
-        if match_result == "Match":
-            combined_input = f"{st.session_state.previous_answer} {user_input}"
-            if st.session_state.previous_chain_type == "base":
-                output = base_chain.invoke({"context": st.session_state.previous_answer, "question": user_input})
-            else:
-                output = rag_chain.invoke(combined_input)
+    if is_match == "match":
+        combined_input = f"{st.session_state.previous_answer} {user_input}"
+
+    # Use the appropriate chain based on previous chain type
+        if st.session_state.chain_type == "base":
+            response = base_chain.invoke(combined_input)
+            response = response["text"]
         else:
-            if is_finetune:
-                output = base_chain.invoke({"context": "", "question": user_input})
-                st.session_state.previous_chain_type = "base"
-            else:
-                output = rag_chain.invoke(user_input)
-                st.session_state.previous_chain_type = "rag"
+            response = rag_chain.invoke(combined_input)
+
+    # Handle non-matching case
     else:
-        if is_finetune:
-            output = base_chain.invoke({"context": "", "question": user_input})
-            st.session_state.previous_chain_type = "base"
+        response = rag_chain.invoke(user_input)
+
+        # If rag_chain yields no response, switch to base_chain
+        if not response:
+            response = base_chain.invoke(user_input)["text"]
+            st.session_state.chain_type = "base"
         else:
-            output = rag_chain.invoke(user_input)
-            st.session_state.previous_chain_type = "rag"
-    st.session_state.previous_answer = output
+            st.session_state.chain_type = "rag"
+
+    # Update the previous answer in session state for the next interaction
+    st.session_state.previous_answer = response
     # Add bot's response to the session state
-    st.session_state.messages.append({"role": "bot", "content": output})
+    st.session_state.messages.append({"role": "bot", "content": response})
 
 with st.container():
     for idx, msg in enumerate(st.session_state.messages):
