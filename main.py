@@ -73,13 +73,13 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 rag_template = """
-You are Kalambot, chatbot for the company Kalambot. Answer only questions related to the company, its values, operations, policies, and other relevant information about Kalambot. If the question is unrelated to the company (e.g., questions about fine-tuning, personal advice, or unrelated topics), return an empty string as the response. Use three sentences maximum and keep the answer concise.
+You are Kalambot, the chatbot for Kalambot, here to assist with questions strictly related to the company — its values, operations, policies, and other relevant information. Focus on answering the current question based on the provided context. If relevant, you may refer to previous responses, but prioritize giving a clear and direct answer to the current question. Interpret any references to "you" or "your" as referring to Kalambot, the company. If the question is unrelated to the company (e.g., questions about fine tuning/finetuning, personal advice, or unrelated topics), return an empty string. Keep responses concise, using a maximum of three sentences.
 
 Question: {question}
-
 Context: {context}
 
 Response:
+
 """
 
 
@@ -93,14 +93,14 @@ rag_chain = (
 
 base_memory = ConversationBufferWindowMemory(input_key="question", memory_key="context", k=2)
 
-generic_template = """Use the following pieces of context to answer the question at the end.
-You are a chatbot and answer questions. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
+generic_template = """
+Use the following pieces of context to answer the question at the end. You are a chatbot and should only respond to queries that are relevant to answering customer questions. If a query is outlandish, unethical, vulgar, or irrelevant, respond with "I don't know." If you don’t know the answer to a valid question, also respond with "I don't know." Use three sentences maximum and keep the answer concise.
 
 {context}
 
 Question: {question}
-
-Helpful Answer:"""
+Helpful Answer:
+"""
 
 generic_prompt = ChatPromptTemplate.from_template(generic_template)
 
@@ -161,8 +161,7 @@ if (st.session_state.enter_pressed) and user_input:
 
     # Use the appropriate chain based on previous chain type
         if st.session_state.chain_type == "base":
-            response = base_chain.invoke(combined_input)
-            response = response["text"]
+            response = base_chain.invoke(user_input)["text"]
         else:
             response = rag_chain.invoke(combined_input)
 
