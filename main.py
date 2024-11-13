@@ -160,7 +160,7 @@ if (st.session_state.enter_pressed) and user_input:
 
     # Use the appropriate chain based on previous chain type
         if st.session_state.chain_type == "base":
-            response = base_chain.invoke(user_input)["text"]
+            response = base_chain.invoke(combined_input)["text"]
         else:
             response = rag_chain.invoke(combined_input)
 
