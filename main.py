@@ -35,25 +35,6 @@ model = ChatOpenAI(model="gpt-4o-mini")
 loader = Docx2txtLoader("Kalambot_Info.docx")
 
 documents = loader.load()
-
-def extract_headers_and_content(doc_path):
-    document = Document(doc_path)
-    content_dict = {}
-    current_header = None
-
-    for para in document.paragraphs:
-        # Check if the paragraph is a header (you can adjust the conditions)
-        if para.style.name.startswith('Heading'):
-            current_header = para.text.strip()
-            content_dict[current_header] = ''
-        elif current_header:
-            # Append content to the current header's content
-            content_dict[current_header] += para.text.strip() + "\n"
-
-    return content_dict
-
-headers_content = extract_headers_and_content("Kalambot_Info.docx")
-
 # Split documents
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500, chunk_overlap=200, add_start_index=True
