@@ -153,11 +153,10 @@ if "enter_pressed" not in st.session_state:
 if (st.session_state.enter_pressed) and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    combined_input = f"{st.session_state.previous_answer} {user_input}"
+    combined_input = f"Previous Response: {st.session_state.previous_answer} Current Question: {user_input}"
     is_match = check_prompt_chain.invoke({"previous_answer": st.session_state.previous_answer, "text": user_input})
     # Define the logic to use the correct chain based on previous context
     if is_match == "match":
-        combined_input = f"{st.session_state.previous_answer} {user_input}"
 
     # Use the appropriate chain based on previous chain type
         if st.session_state.chain_type == "base":
