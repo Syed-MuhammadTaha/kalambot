@@ -114,18 +114,18 @@ base_chain = LLMChain(
 check_prompt_template = ChatPromptTemplate.from_messages(
     [
         ("system",
-         "You are KalamBot, an intelligent assistant tasked with determining if the user's current question is a follow-up to the same subject of previous response. Follow these steps to decide:\n\n"
-         "1. **Identify the Main Subject**: First, identify the main subject or entity in the previous response ('{previous_answer}'). For example, if the previous response is 'happy to help you,' the subject is likely the chatbot itself.\n\n"
-         "2. **Analyze the Current Question**: Check if the current question ('{text}') addresses the same subject. Look for indications that the question refers back to the same entity, such as references to 'you,' 'the company,' or other specific terms linked to the identified subject.\n\n"
-         "3. **Determine Match or No Match**: If the current question logically follows from the previous response and both refer to the same subject or entity, categorize as 'match.' Otherwise, categorize as 'No Match'.\n\n"
+         "You are KalamBot, an intelligent assistant tasked with determining if the user's current question is a follow-up to the same subject as the previous response. Follow these steps to decide:\n\n"
+         "1. **Check if Previous Response Contains 'I don't know'**: If the previous response ('{previous_answer}') contains 'I don't know,' respond immediately with 'No Match.'\n\n"
+         "2. **Identify the Main Subject**: Identify the main subject or entity in the previous response ('{previous_answer}').\n\n"
+         "3. **Analyze the Current Question**: Check if the current question ('{text}') addresses the same subject. Look for indications that the question refers back to the same entity, such as references to 'you,' 'the company,' or other specific terms linked to the identified subject.\n\n"
+         "4. **Determine Match or No Match**: If the current question logically follows from the previous response and both refer to the same subject or entity, categorize as 'match.' Otherwise, categorize as 'No Match'.\n\n"
          "Respond with one of the following:\n"
          "- 'match' if the question clearly follows from and refers to the same entity or concept as the previous response.\n"
-         "- 'No Match' if the question is unrelated to the previous response."
+         "- 'No Match' if the question is unrelated to the previous response or if the previous response contains 'I don't know.'"
         ),
         ("user", "Follow-up question: {text}. Previous answer: {previous_answer}.")
     ]
 )
-
 
 
 check_prompt_chain = check_prompt_template | model | StrOutputParser()
